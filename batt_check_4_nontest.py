@@ -1,17 +1,11 @@
 #!/usr/bin/env python3
-# Dan Evans 23-29/4/19, based on script by Alex Eames
+# Dan Evans 23-29/4/19b, based on script by Alex Eames
 # NB THIS VERSION FOR DEPLOYMENT
 
 # nb at setup need : sudo apt-get install python3-rpi.gpio
 
 import time
-import os
-import subprocess
 import RPi.GPIO as GPIO
-from time import gmtime, strftime
-
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
 
 # Hardware setup
 adcs = [0] # voltage divider connected to channel 0 of mcp3002
@@ -28,6 +22,14 @@ SPICLK = 16
 SPIMISO = 20
 SPIMOSI = 21
 SPICS = 13
+
+#Set up set up GPIO & SPI interface pins
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(SPIMOSI, GPIO.OUT)
+GPIO.setup(SPIMISO, GPIO.IN)
+GPIO.setup(SPICLK, GPIO.OUT)
+GPIO.setup(SPICS, GPIO.OUT)
 
 # ADC code based on an adafruit example for mcp3008
 def readadc(adcnum, clockpin, mosipin, misopin, cspin):
@@ -66,15 +68,9 @@ def readadc(adcnum, clockpin, mosipin, misopin, cspin):
     adcout /= 2       # first bit is 'null' so drop it
     return adcout
 
-#Set up set up the SPI interface pins
-GPIO.setup(SPIMOSI, GPIO.OUT)
-GPIO.setup(SPIMISO, GPIO.IN)
-GPIO.setup(SPICLK, GPIO.OUT)
-GPIO.setup(SPICS, GPIO.OUT)
-
 def getbatt():
     for adcnum in adcs:
-        # read the analog pin
+        # read the analogue pin
         adctot = 0
         for i in range(reps):
             read_adc = readadc(adcnum, SPICLK, SPIMOSI, SPIMISO, SPICS)
@@ -86,7 +82,7 @@ def getbatt():
         if (read_adc == 0):
             return False
 
-        # convert analog reading to volts and %, accounting for vref and setup of resistor bridge
+        # convert analogue reading to volts and %, accounting for vref and setup of resistor bridge
         volts = read_adc * ( vref / 1024 ) * (res1 + res2) / res2
         voltspc = int ( 100 * ( volts - cutoff ) / ( maxvolts - cutoff ) )
         voltspcround = pcround * round( voltspc / pcround )
